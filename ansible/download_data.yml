@@ -1,0 +1,33 @@
+
+---
+- name: Gather the list of data to download
+  hosts: localhost
+  tasks:
+  - name: Create data folder
+    ansible.builtin.file:
+      path: data/
+      state: directory
+      mode: '0755' 
+  - name: retrieve index
+     #Download all the index data from the British library open books archive
+    ansible.builtin.get_url:
+      url:  "https://bl.iro.bl.uk/collections/b7fd2482-debd-4495-9494-72aa2ead00bb?utf8=1&sort=year_published_isi+asc&per_page=20&locale=en"
+      dest: data/index.html
+  - name: create list of target datafiles
+    ansible.builtin.shell: build-index data/index.html >> data/targets
+
+- name: download the individual zip datafiles
+  hosts: aws_ec2
+  vars:
+    targets: "{{lookup('file','data/targets')|split('\n')}}"
+  tasks:
+  - name: Create data folder
+    ansible.builtin.file:
+      path: data/
+      state: directory
+      mode: '0755' 
+  - name: Fetch the individual files
+    ansible.builtin.get_url:
+      url:   "{{ item }}"
+      dest: data
+    loop: "{{targets}}"
