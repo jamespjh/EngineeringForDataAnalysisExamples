@@ -1,0 +1,11 @@
+---
+- name: Stop the instance
+  hosts: localhost
+  tasks:
+    - name: Stop the instance
+      amazon.aws.ec2_instance:
+        state: stopped
+        wait: True
+        filters:
+          instance-state-name: running
+          tag:Owner: ucgajhe

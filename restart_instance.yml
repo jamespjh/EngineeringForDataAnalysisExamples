@@ -1,0 +1,10 @@
+- name: Restart the instance
+  hosts: localhost
+  tasks:
+    - name: Start the instance
+      amazon.aws.ec2_instance:
+        state: running
+        wait: True
+        filters:
+          instance-state-name: stopped
+          tag:Owner: ucgajhe

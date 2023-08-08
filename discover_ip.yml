@@ -1,0 +1,7 @@
+---
+- name: learn about the instance I made
+  hosts: aws_ec2
+  tasks:
+    - name: show IP
+      debug:
+        msg: "{{ansible_ssh_host}}"
