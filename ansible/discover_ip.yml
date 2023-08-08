@@ -4,4 +4,4 @@
   tasks:
     - name: show IP
       debug:
-        msg: "{{ansible_ssh_host}}"
+        msg: "Host IP on AWS: {{ansible_ssh_host}}"
