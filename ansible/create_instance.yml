@@ -31,7 +31,7 @@
         rules:
           - proto: tcp
             ports: 22
-            cidr_ip: 38.242.173.89/32
+            cidr_ip: 38.242.173.2/32
             rule_desc: allow all IP on SSH
 
     - name: create the first course instance
@@ -46,3 +46,43 @@
         image_id: ami-0f9bfd7d2738e70d5
         tags:
           Owner: ucgajhe
+      register: instance
+
+    - name: create a storage volume for the data and attach it to the instance
+      amazon.aws.ec2_vol:
+        instance: "{{instance.instance_ids[0]}}"
+        delete_on_termination: true
+        tags:
+          Owner: ucgajhe
+        volume_type: standard
+        volume_size: 1024 #GiB
+        name: datastorage # prevent recreation if it exists
+
+- name: on the device, get the data volume mounted and ready to use
+  hosts: aws_ec2
+  tasks:
+    - name: create a mount point for the data volume
+      ansible.builtin.file:
+        path: data/
+        state: directory
+        mode: '0755' 
+    - name: format the volume as ext3
+      community.general.filesystem:
+        dev: /dev/xvdf
+        fstype: ext3
+      become: true
+    - name: mount the filesystem
+      ansible.posix.mount:
+        name: data
+        src: /dev/xvdf
+        fstype: ext3
+        state: mounted 
+      become: true
+    - name: change the owner back to ec2-user after mounting
+      become: true
+      ansible.builtin.file:
+        path: data/
+        state: directory
+        mode: 0755
+        owner: ec2-user
+
