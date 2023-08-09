@@ -14,7 +14,7 @@
       url:  "https://bl.iro.bl.uk/collections/b7fd2482-debd-4495-9494-72aa2ead00bb?utf8=1&sort=year_published_isi+asc&per_page=20&locale=en"
       dest: data/index.html
   - name: create list of target datafiles
-    ansible.builtin.shell: build-index data/index.html >> data/targets
+    ansible.builtin.shell: build-index data/index.html > data/targets
 
 - name: download the individual zip datafiles
   hosts: aws_ec2
@@ -35,3 +35,4 @@
       dest: data
       tmp_dest: data/tmp
     loop: "{{targets}}"
+    register: monitor

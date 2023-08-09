@@ -10,6 +10,7 @@
         key_material: "{{ lookup('file', '/Users/jamespjh/.ssh/aws_rsa.pub') }}"
 
     - name: get the data about vpcs
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_net_info_module.html
       amazon.aws.ec2_vpc_net_info:
         filters:
           "tag:Name": ARC-playpen
@@ -23,6 +24,7 @@
       register: subnets
 
     - name: create a security group
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_security_group_module.html
       amazon.aws.ec2_security_group:
         name: course_security_group
         description: course security group
@@ -31,10 +33,11 @@
         rules:
           - proto: tcp
             ports: 22
-            cidr_ip: 38.242.173.2/32
+            cidr_ip: 144.82.114.211/32
             rule_desc: allow all IP on SSH
 
     - name: create the first course instance
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
       amazon.aws.ec2_instance:
         name: ucgajhe-dev-instance
         key_name: ucgajhe_aws_dev_keypair
@@ -46,16 +49,18 @@
         image_id: ami-0f9bfd7d2738e70d5
         tags:
           Owner: ucgajhe
+        wait: true
       register: instance
 
     - name: create a storage volume for the data and attach it to the instance
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
       amazon.aws.ec2_vol:
         instance: "{{instance.instance_ids[0]}}"
         delete_on_termination: true
         tags:
           Owner: ucgajhe
-        volume_type: standard
-        volume_size: 1024 #GiB
+        volume_size: 512 #GiB
+        volume_type: gp3
         name: datastorage # prevent recreation if it exists
 
 - name: on the device, get the data volume mounted and ready to use
@@ -69,13 +74,13 @@
     - name: format the volume as ext3
       community.general.filesystem:
         dev: /dev/xvdf
-        fstype: ext3
+        fstype: ext4
       become: true
     - name: mount the filesystem
       ansible.posix.mount:
         name: data
         src: /dev/xvdf
-        fstype: ext3
+        fstype: ext4
         state: mounted 
       become: true
     - name: change the owner back to ec2-user after mounting
