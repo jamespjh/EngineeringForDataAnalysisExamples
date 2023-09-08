@@ -5,7 +5,9 @@
   tasks:
 
     - name: create key pair on aws using key_material obtained using 'file' lookup plugin
+      #https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_key_module.html
       amazon.aws.ec2_key:
+        region: eu-west-2
         name: ucgajhe_aws_dev_keypair
         key_material: "{{ lookup('file', '/Users/jamespjh/.ssh/aws_rsa.pub') }}"
 
