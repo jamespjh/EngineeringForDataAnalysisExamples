@@ -10,6 +10,8 @@
         packages:
         - python
         - python-pip
+        - unzip
+        - wget
     - name: install this package from from git
       ansible.builtin.pip:
         name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git

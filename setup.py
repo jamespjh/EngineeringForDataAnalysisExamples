@@ -10,5 +10,6 @@ setup(name='dataeng',
       url='TBC',
       packages=['dataeng'],
       install_requires=['bs4','ansible-core','botocore','boto3'],
-      entry_points={'console_scripts': ['build-index = dataeng.gather:parse_index_entry']}
+      entry_points={'console_scripts': ['build-index = dataeng.gather:parse_index_entry',
+                                        'analyse = dataeng.analyse:analysis_entry']}
      )
