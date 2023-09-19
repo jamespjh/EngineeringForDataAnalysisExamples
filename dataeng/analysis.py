@@ -26,7 +26,7 @@ def analyse_file(source, target_word):
         index_file = [name for name in zip.namelist() if "metadata" in name][0]
         with zip.open(index_file) as metadata:
             tree=etree.parse(metadata)
-            date = int(tree.find('//{http://www.loc.gov/mods/v3}dateIssued').text)
+            date = tree.find('//{http://www.loc.gov/mods/v3}dateIssued').text
         # for each other file in the ALTO xml
         other_files = [name for name in zip.namelist() if "metadata" not in name and name != "ALTO/"]
         count = 0
