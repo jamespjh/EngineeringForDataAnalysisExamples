@@ -11,5 +11,5 @@ setup(name='dataeng',
       packages=['dataeng'],
       install_requires=['bs4','ansible-core','botocore','boto3'],
       entry_points={'console_scripts': ['build-index = dataeng.gather:parse_index_entry',
-                                        'analyse = dataeng.analyse:analysis_entry']}
+                                        'analyse = dataeng.analysis:analysis_entry']}
      )

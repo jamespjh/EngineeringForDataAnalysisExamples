@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from zipfile import ZipFile
 import os
+from argparse import ArgumentParser
 
 def analysis_entry():
     parser = ArgumentParser(description="Process a collection or individual zip file")
@@ -11,10 +12,13 @@ def analysis_entry():
     arguments = parser.parse_args()
 
     # if the path is to a folder, then extract the names of the zip files in it, analyse each, and combine the results
-    results = analyse_collection(path, target_word)
-
+    if os.path.isdir(arguments.path):
+        results = analyse_collection(arguments.path, arguments.target_word)
+    else: 
     # if the path is to a zip file, assume it is a single book and analyse it, printing the results for that book
-    results = analyse_file(path, target_word)
+        results = analyse_file(arguments.path, arguments.target_word)
+
+    print(results)
 
 def analyse_file(source, target_word):
     with ZipFile(source) as zip:
