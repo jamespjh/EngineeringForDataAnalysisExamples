@@ -22,20 +22,24 @@ def analysis_entry():
     print(results)
 
 def analyse_file(source, target_word):
-    with ZipFile(source) as zip:
-        index_file = [name for name in zip.namelist() if "metadata" in name][0]
-        with zip.open(index_file) as metadata:
-            tree=etree.parse(metadata)
-            date = tree.find('//{http://www.loc.gov/mods/v3}dateIssued').text
-        # for each other file in the ALTO xml
-        other_files = [name for name in zip.namelist() if "metadata" not in name and name != "ALTO/"]
-        count = 0
-        for filename in other_files:
-            with zip.open(filename) as file:
-                tree=etree.parse(file)
-                text = tree.findall(f"//String[@CONTENT='{target_word}']")
-                count += len(text)
-    return (date, count)
+    try:
+        with ZipFile(source) as zip:
+            index_file = [name for name in zip.namelist() if "metadata" in name][0]
+            with zip.open(index_file) as metadata:
+                tree=etree.parse(metadata)
+                date = tree.find('//{http://www.loc.gov/mods/v3}dateIssued').text
+            # for each other file in the ALTO xml
+            other_files = [name for name in zip.namelist() if "metadata" not in name and name != "ALTO/"]
+            count = 0
+            for filename in other_files:
+                with zip.open(filename) as file:
+                    tree=etree.parse(file)
+                    text = tree.findall(f"//String[@CONTENT='{target_word}']")
+                    count += len(text)
+        return (date, count)
+    except AttributeError:
+        return ("", 0)
+
 
 def analyse_collection(source, target_word):
     results = {}
