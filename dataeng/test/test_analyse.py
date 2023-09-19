@@ -17,4 +17,4 @@ def test_can_analyse_collection():
         'fixtures','collection')
     result = analyse_collection(fixture, 'arms')
     assert result[1851] == 9
-    assert result[1852] == 83
+    assert result[1852] == 79

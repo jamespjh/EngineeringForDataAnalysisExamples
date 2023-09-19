@@ -12,6 +12,8 @@
         - python-pip
         - unzip
         - wget
+        - lxml
     - name: install this package from from git
       ansible.builtin.pip:
         name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
+        state: forcereinstall

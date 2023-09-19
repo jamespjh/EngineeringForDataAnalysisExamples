@@ -1,4 +1,5 @@
-from bs4 import BeautifulSoup
+
+from lxml import etree
 from zipfile import ZipFile
 import os
 from argparse import ArgumentParser
@@ -24,17 +25,16 @@ def analyse_file(source, target_word):
     with ZipFile(source) as zip:
         index_file = [name for name in zip.namelist() if "metadata" in name][0]
         with zip.open(index_file) as metadata:
-            soup=BeautifulSoup(metadata, features='xml')
-            date = int(soup.find('MODS:dateIssued').text)
+            tree=etree.parse(metadata)
+            date = int(tree.find('//{http://www.loc.gov/mods/v3}dateIssued').text)
         # for each other file in the ALTO xml
         other_files = [name for name in zip.namelist() if "metadata" not in name and name != "ALTO/"]
         count = 0
         for filename in other_files:
             with zip.open(filename) as file:
-                soup=BeautifulSoup(file, features='xml')
-                text = [string['CONTENT'] for string in soup.find_all("String")]
-                selected_text = [result for result in text if result.lower().strip() == target_word.lower()]
-                count += len(selected_text)
+                tree=etree.parse(file)
+                text = tree.findall(f"//String[@CONTENT='{target_word}']")
+                count += len(text)
     return (date, count)
 
 def analyse_collection(source, target_word):
