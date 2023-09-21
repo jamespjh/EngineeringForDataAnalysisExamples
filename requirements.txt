@@ -2,3 +2,4 @@ ansible-core==2.15.2
 boto3==1.28.21
 botocore==1.31.21
 beautifulsoup4==4.12.2
+mr4mp==2.7.1

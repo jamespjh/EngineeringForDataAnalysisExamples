@@ -7,14 +7,21 @@ def test_can_analyse_file():
     fixture = os.path.join(os.path.dirname(__file__),
         'fixtures','collection',
         '99442.zip')
-    result = analyse_file(fixture, 'arms')
-    assert result[0] == "1851"
-    assert result[1] == 9
-
+    result = analyse_file('arms', fixture)
+    assert result["1851"] == 9
 
 def test_can_analyse_collection():
     fixture = os.path.join(os.path.dirname(__file__),
         'fixtures','collection')
     result = analyse_collection(fixture, 'arms')
+    print(result)
+    assert result["1851"] == 9
+    assert result["1852"] == 79
+
+def test_can_analyse_collection_parallel():
+    fixture = os.path.join(os.path.dirname(__file__),
+        'fixtures','collection')
+    result = analyse_collection(fixture, 'arms', True)
+    print(result)
     assert result["1851"] == 9
     assert result["1852"] == 79

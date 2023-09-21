@@ -38,32 +38,45 @@
             cidr_ip: 38.242.0.0/16
             rule_desc: allow my IP on SSH
 
-    - name: create the first course instance
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
+    - name: create the instances
+      # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
       amazon.aws.ec2_instance:
-        name: ucgajhe-dev-instance
+        name: "ucgajhe-{{item}}-instance"
         key_name: ucgajhe_aws_dev_keypair
         vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
-        instance_type: t2.micro
+        instance_type: "{{item}}"
         security_group: course_security_group
         network:
           assign_public_ip: true
         image_id: ami-0f9bfd7d2738e70d5
         tags:
           Owner: ucgajhe
-        wait: true
-      register: instance
+      loop:
+        - t2.micro
+        - c4.2xlarge
 
-    - name: create a storage volume for the data and attach it to the instance
+    - name: Gather information instances
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
+      amazon.aws.ec2_instance_info:
+        filters:
+          "tag:Owner": ucgajhe
+          instance-state-name: running
+      register: instance_info
+
+    - name: create storage volumes for the data for each instance and attach to the instances
     # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
       amazon.aws.ec2_vol:
-        instance: "{{instance.instance_ids[0]}}"
+        instance: "{{item.instance_id}}"
         delete_on_termination: true
         tags:
           Owner: ucgajhe
-        volume_size: 512 #GiB
+        volume_size: 128 #GiB
         volume_type: gp3
-        name: datastorage # prevent recreation if it exists
+        name: datastorage-{{item.instance_id}} # prevent recreation if it exists
+      loop: "{{instance_info.instances}}"
+
+
+
 
 - name: on the device, get the data volume mounted and ready to use
   hosts: aws_ec2
@@ -73,7 +86,7 @@
         path: data/
         state: directory
         mode: '0755' 
-    - name: format the volume as ext3
+    - name: format the volume as ext4
       community.general.filesystem:
         dev: /dev/xvdf
         fstype: ext4

@@ -9,19 +9,20 @@ def analysis_entry():
 
     parser.add_argument('path')
     parser.add_argument('target_word')
+    parser.add_argument('--parallel', action='store_true')
 
     arguments = parser.parse_args()
 
     # if the path is to a folder, then extract the names of the zip files in it, analyse each, and combine the results
     if os.path.isdir(arguments.path):
-        results = analyse_collection(arguments.path, arguments.target_word)
+        results = analyse_collection(arguments.path, arguments.target_word, arguments.parallel)
     else: 
     # if the path is to a zip file, assume it is a single book and analyse it, printing the results for that book
-        results = analyse_file(arguments.path, arguments.target_word)
+        results = analyse_file(arguments.target_word, arguments.path)
 
     print(results)
 
-def analyse_file(source, target_word):
+def analyse_file(target_word, source):
     try:
         with ZipFile(source) as zip:
             index_file = [name for name in zip.namelist() if "metadata" in name][0]
@@ -36,19 +37,31 @@ def analyse_file(source, target_word):
                     tree=etree.parse(file)
                     text = tree.findall(f"//String[@CONTENT='{target_word}']")
                     count += len(text)
-        return (date, count)
+        return {date: count}
     except AttributeError:
-        return ("", 0)
+        return {"": 0}
 
+def combine(dict1, dict2):
 
-def analyse_collection(source, target_word):
-    results = {}
-    for file in os.listdir(source):
-        year, count = analyse_file(
-            os.path.join(source, file), 
-            target_word)
-        if year in results:
-            results[year] += count
+    for key in dict2:
+        if key in dict1:
+            dict1[key]+=dict2[key]
         else:
-            results[year] = count
-    return results
+            dict1[key] = dict2[key]
+
+    return dict1
+
+def analyse_collection(source, target_word, parallel=False):
+
+    from functools import reduce, partial
+    targets = list(map(partial(os.path.join, source),os.listdir(source)))
+    mapper = partial(analyse_file, target_word)
+    
+    if parallel:
+        import mr4mp
+        pool = mr4mp.pool()
+        result = pool.mapreduce(mapper, combine, targets)
+    else:
+
+        result = reduce(combine,map(mapper, targets),{})
+    return result
