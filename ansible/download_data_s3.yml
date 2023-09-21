@@ -1,0 +1,31 @@
+- name: download the individual zip datafiles
+  hosts: aws_ec2
+  vars:
+    targets:
+      - 1850-1859
+    subcorpus:
+      - 
+  tasks:
+  - name: Create temp folder for incomplete downloads on larger volume
+    ansible.builtin.file:
+      path: data/tmp
+      state: directory
+      mode: '0755' 
+  - name: Fetch the individual files 
+  # Need to point out that this is a faff cf cat targets |
+  # xargs -n1 wget but worth it for stability
+  # Or GNU parallel
+    ansible.builtin.get_url:
+      url:   "https://s3.eu-west-2.amazonaws.com/nineteenth-century-books/{{ item }}.zip"
+      dest: "data/{{item}}.zip"
+      tmp_dest: data/tmp
+    loop: "{{targets}}"
+    register: monitor
+  - name: unzip the files (top level of zipping only)
+  #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
+  # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
+    ansible.builtin.unarchive:
+      src: "data/{{item}}.zip"
+      dest: data
+      remote_src: yes
+    loop: "{{targets}}"
