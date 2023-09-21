@@ -59,7 +59,7 @@ def analyse_collection(source, target_word, parallel=False):
     
     if parallel:
         import mr4mp
-        pool = mr4mp.pool()
+        pool = mr4mp.pool(2*os.cpu_count())
         result = pool.mapreduce(mapper, combine, targets)
     else:
 
