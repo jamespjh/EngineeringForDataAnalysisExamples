@@ -164,7 +164,13 @@
       src: "data/{{item}}.zip"
       dest: data
       remote_src: yes
-    loop: "{{targets}}"
+  loop: "{{targets}}"
+  - name: create the manifest file
+    ansible.builtin.shell:
+      chdir: data
+      cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'
+
+
 
 - name: create the client instances
   hosts: localhost
