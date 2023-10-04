@@ -51,6 +51,7 @@
         image_id: ami-0f9bfd7d2738e70d5
         tags:
           Owner: ucgajhe
+          Type: exemplar
       loop:
         - t2.micro
         - c4.2xlarge
@@ -63,23 +64,37 @@
           instance-state-name: running
       register: instance_info
 
-    - name: create storage volumes for the data for each instance and attach to the instances
+
+
+    - name: create storage volumes for the data for c4 instance and attach
     # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
       amazon.aws.ec2_vol:
-        instance: "{{item.instance_id}}"
+        instance: "{{(instance_info.instances | selectattr('instance_type','eq','c4.2xlarge'))[0].instance_id}}"
+        delete_on_termination: true
+        tags:
+          Owner: ucgajhe
+        volume_size: 128 #GiB
+        iops: 6000
+        throughput: 750
+        volume_type: gp3
+        name: datastorage-c4 # prevent recreation if it exists
+
+    - name: create storage volumes for the data for each instance and attach
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
+      amazon.aws.ec2_vol:
+        instance: "{{(instance_info.instances | selectattr('instance_type','eq','t2.micro'))[0].instance_id}}"
         delete_on_termination: true
         tags:
           Owner: ucgajhe
         volume_size: 128 #GiB
         volume_type: gp3
-        name: datastorage-{{item.instance_id}} # prevent recreation if it exists
-      loop: "{{instance_info.instances}}"
+        name: datastorage-t2 # prevent recreation if it exists
 
-
-
+- name: Refresh inventory to ensure new instances exist in inventory
+  ansible.builtin.meta: refresh_inventory
 
 - name: on the device, get the data volume mounted and ready to use
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   tasks:
     - name: create a mount point for the data volume
       ansible.builtin.file:
