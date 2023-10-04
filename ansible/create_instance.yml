@@ -37,6 +37,10 @@
             ports: 22
             cidr_ip: 38.242.0.0/16
             rule_desc: allow my IP on SSH
+          - proto: tcp
+            ports: 80
+            cidr_ip: 38.242.0.0/16
+            rule_desc: allow my IP on WWW
 
     - name: create the instances
       # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
