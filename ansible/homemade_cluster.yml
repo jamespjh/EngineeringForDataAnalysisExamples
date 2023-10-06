@@ -157,20 +157,18 @@
       tmp_dest: data/tmp
     loop: "{{targets}}"
     register: monitor
-  - name: unzip the files (top level of zipping only)
-  #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
-  # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
-    ansible.builtin.unarchive:
-      src: "data/{{item}}.zip"
-      dest: data
-      remote_src: yes
-  loop: "{{targets}}"
+  # - name: unzip the files (top level of zipping only)
+  # #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
+  # # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
+  #   ansible.builtin.unarchive:
+  #     src: "data/{{item}}.zip"
+  #     dest: data
+  #     remote_src: yes
+  # loop: "{{targets}}"
   - name: create the manifest file
     ansible.builtin.shell:
       chdir: data
       cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'
-
-
 
 - name: create the client instances
   hosts: localhost
@@ -211,3 +209,8 @@
       ansible.builtin.pip:
         name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
         state: forcereinstall
+    - name: get the manifest on each client
+      ansible.builtin.get_url:
+        url: "{{host_info.instances[0].public_ip_address}}/data/manifest.txt"
+        dest: manifest.txt
+        tmp_dest: data/tmp
