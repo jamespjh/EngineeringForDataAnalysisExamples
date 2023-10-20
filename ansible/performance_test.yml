@@ -1,5 +1,5 @@
 - name: time how long it takes to analyse one or more files on each machine
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   vars:
     subcorpus: 
       - 000951039_0_1-340pgs__619422

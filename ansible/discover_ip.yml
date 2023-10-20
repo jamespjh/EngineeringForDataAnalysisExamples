@@ -1,6 +1,6 @@
 ---
 - name: learn about the instance I made
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   tasks:
     - name: show IP
       debug:

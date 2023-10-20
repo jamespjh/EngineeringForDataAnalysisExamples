@@ -1,6 +1,6 @@
 ---
 - name: Prepare the code to run on the remote
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   tasks:
     - name: Install yum packages
       ansible.builtin.yum:

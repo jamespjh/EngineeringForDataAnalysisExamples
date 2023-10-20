@@ -94,8 +94,8 @@
         volume_type: gp3
         name: datastorage-t2 # prevent recreation if it exists
 
-- name: Refresh inventory to ensure new instances exist in inventory
-  ansible.builtin.meta: refresh_inventory
+    - name: Refresh inventory to ensure new instances exist in inventory
+      ansible.builtin.meta: refresh_inventory
 
 - name: on the device, get the data volume mounted and ready to use
   hosts: tag_Type_exemplar

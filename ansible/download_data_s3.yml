@@ -1,5 +1,5 @@
 - name: download the individual zip datafiles
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   vars:
     targets:
       - 1850-1859

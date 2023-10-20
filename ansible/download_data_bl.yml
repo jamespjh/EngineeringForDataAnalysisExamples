@@ -17,7 +17,7 @@
     ansible.builtin.shell: build-index data/index.html > data/targets
 
 - name: download the individual zip datafiles
-  hosts: aws_ec2
+  hosts: tag_Type_exemplar
   vars:
     targets: "{{lookup('file','data/targets')|split('\n')}}"
   tasks:
