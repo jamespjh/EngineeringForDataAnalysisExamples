@@ -1,3 +1,5 @@
+
+
 - name: gather info on networks
   hosts: localhost # This is where this task will run - not where the affected machines are
   tasks:
@@ -38,6 +40,16 @@
             ports: 80
             cidr_ip: 38.242.0.0/16
             rule_desc: allow my IP on WWW
+          - proto: tcp
+            ports: 80
+            group_name: cluster_security_group
+            rule_desc: Allow each element of the cluster to access other machines in the cluster with WWW
+            # only works via PRIVATE IP
+          - proto: tcp
+            ports: 22
+            group_name: cluster_security_group
+            rule_desc: Allow each element of the cluster to access other machines in the cluster with SSH
+
 
     - name: create the host node
       # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
@@ -172,6 +184,8 @@
 
 - name: create the client instances
   hosts: localhost
+  vars:
+    cluster_size: 16
   tasks:
     - name: create instances
       amazon.aws.ec2_instance:
@@ -179,17 +193,29 @@
         key_name: ucgajhe_aws_dev_keypair
         vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
         instance_type: t3.small
-        security_group: course_security_group
+        security_group: cluster_security_group
+        #iam_instance_profile: arn:aws:iam::206627141809:instance-profile/EC2ReadTagsRole
+        # Above is to allow the instances to query their own metadata via boto
         network:
           assign_public_ip: true
         image_id: ami-0f9bfd7d2738e70d5
         tags:
           Owner: ucgajhe
           Role: client
+          Rank: "{{item}}"
+          Size: "{{cluster_size}}"
         state: running
-      loop: "{{range(16)}}"
+      loop: "{{range(cluster_size)}}"
     - name: Refresh inventory to ensure new instances exist in inventory
       ansible.builtin.meta: refresh_inventory
+    - name: Gather information on client instances
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
+      amazon.aws.ec2_instance_info:
+        filters:
+          "tag:Owner": ucgajhe
+          "tag:Role": client
+          instance-state-name: running
+      register: client_info
 
 - name: Prepare the code to run on the clients
   hosts: tag_Role_client
@@ -211,6 +237,19 @@
         state: forcereinstall
     - name: get the manifest on each client
       ansible.builtin.get_url:
-        url: "{{host_info.instances[0].public_ip_address}}/data/manifest.txt"
-        dest: manifest.txt
-        tmp_dest: data/tmp
+        url: "http://{{hostvars['localhost'].host_info.instances[0].private_ip_address}}/data/manifest.txt"
+        dest: /home/ec2-user/manifest.txt
+    - name: get facts about this instance, and add them to the hostvars
+      amazon.aws.ec2_metadata_facts:
+    # - name: get more facts about this instance and register them
+    # # This is much more of a faff than it should be
+    #   amazon.aws.ec2_instance_info:
+    #     region: eu-west-2
+    #     instance_ids: "{{ansible_ec2_instance_id}}"
+    #   register: facts_about_this_instance
+    - name: Tell the instance about its rank and size in the cluster
+      ansible.builtin.set_fact: 
+        rank: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Rank}}"
+        size: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Size}}"
+    - name: generate a partial manifest on each client
+      ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
