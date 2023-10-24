@@ -4,8 +4,9 @@
   tasks:
     - name: Stop the instance
       amazon.aws.ec2_instance:
-        state: stopped
+        state: terminated
         wait: True
         filters:
           instance-state-name: running
           tag:Owner: ucgajhe
+          tag:Role: client

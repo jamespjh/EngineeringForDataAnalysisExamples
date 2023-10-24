@@ -34,6 +34,10 @@
     - unzip
     - wget
     - httpd
+- name: install this package from from git
+  ansible.builtin.pip:
+    name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
+    state: forcereinstall
 - name: Set up the web server to serve from ~/data
   become: true
   ansible.builtin.copy:
@@ -57,7 +61,7 @@
     mode: '0755'
 - name: Create folder for clients to deposit their results
   ansible.builtin.file:
-    path: data/tmp
+    path: results
     state: directory
     mode: '0755' 
 - name: Set up the cluster key to allow clients to ssh to the host

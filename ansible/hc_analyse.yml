@@ -3,4 +3,4 @@
   async: 3600
   poll: 10
 - name: copy the result from this node to the master
-  ansible.builtin.shell: "scp result_*.json ec2_user@{{hostvars['localhost'].host_info.instances[0].private_ip_address}}:results"
+  ansible.builtin.shell: "scp -o StrictHostKeyChecking=no result_*.json ec2-user@{{hostvars['localhost'].host_info.instances[0].private_ip_address}}:results/ "

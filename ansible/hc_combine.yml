@@ -1,0 +1,6 @@
+- name: Combine the results
+  ansible.builtin.shell: combine results
+  register: results
+- name: Print the results
+  ansible.builtin.debug:
+    var: results
