@@ -18,12 +18,7 @@ def analysis_entry():
     if os.path.isdir(arguments.path):
         results = analyse_collection(arguments.path, arguments.target_word, arguments.parallel)
     else: 
-    # if the path is to a zip file, assume it is a single book and analyse it, printing the results for that book
-        if ".zip" in arguments.path:
-            results = analyse_file(arguments.target_word, arguments.path)
-        else: 
-            # assume the file contains a manifest of URLs to treat as data sources
-            results = analyse_manifest(arguments.path, arguments.target_word, arguments.parallel)
+        results = analyse_file(arguments.target_word, arguments.path)
 
     print(results)
 
@@ -60,21 +55,6 @@ def analyse_collection(source, target_word, parallel=False):
 
     from functools import reduce, partial
     targets = list(map(partial(os.path.join, source),os.listdir(source)))
-    mapper = partial(analyse_file, target_word)
-    
-    if parallel:
-        import mr4mp
-        pool = mr4mp.pool(2*os.cpu_count())
-        result = pool.mapreduce(mapper, combine, targets)
-    else:
-
-        result = reduce(combine,map(mapper, targets),{})
-    return result
-
-
-def analyse_manifest(source, target_word, parallel=False):
-    from functools import reduce, partial
-    targets = # each line in the file, turned into a file-like object with requests
     mapper = partial(analyse_file, target_word)
     
     if parallel:
