@@ -37,8 +37,16 @@
             cidr_ip: 38.242.0.0/16
             rule_desc: allow my IP on SSH
           - proto: tcp
+            ports: 22
+            cidr_ip: 144.82.0.0/16
+            rule_desc: allow my IP on SSH
+          - proto: tcp
             ports: 80
             cidr_ip: 38.242.0.0/16
+            rule_desc: allow my IP on WWW
+          - proto: tcp
+            ports: 80
+            cidr_ip: 144.82.0.0/16
             rule_desc: allow my IP on WWW
           - proto: tcp
             ports: 80
