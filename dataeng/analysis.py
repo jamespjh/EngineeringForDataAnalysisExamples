@@ -1,6 +1,7 @@
 
 from lxml import etree
 from zipfile import ZipFile
+from json import dumps
 import os
 import requests
 from argparse import ArgumentParser
@@ -20,7 +21,7 @@ def analysis_entry():
     else: 
         results = analyse_file(arguments.target_word, arguments.path)
 
-    print(results)
+    print(dumps(results))
 
 def analyse_file(target_word, source):
     try:
@@ -41,7 +42,7 @@ def analyse_file(target_word, source):
     except AttributeError:
         return {"": 0}
 
-def combine(dict1, dict2):
+def combine_dict(dict1, dict2):
 
     for key in dict2:
         if key in dict1:
@@ -60,8 +61,8 @@ def analyse_collection(source, target_word, parallel=False):
     if parallel:
         import mr4mp
         pool = mr4mp.pool(2*os.cpu_count())
-        result = pool.mapreduce(mapper, combine, targets)
+        result = pool.mapreduce(mapper, combine_dict, targets)
     else:
 
-        result = reduce(combine,map(mapper, targets),{})
+        result = reduce(combine_dict,map(mapper, targets),{})
     return result
