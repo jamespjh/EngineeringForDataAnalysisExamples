@@ -1,0 +1,17 @@
+- name: Gather information on client instances
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
+  amazon.aws.ec2_instance_info:
+    filters:
+      "tag:Owner": ucgajhe
+      "tag:Role": client
+      instance-state-name: running
+  register: client_info
+
+- name: Gather information on host instance
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
+  amazon.aws.ec2_instance_info:
+    filters:
+      "tag:Owner": ucgajhe
+      "tag:Role": host
+      instance-state-name: running
+  register: host_info

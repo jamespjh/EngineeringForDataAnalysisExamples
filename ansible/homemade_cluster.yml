@@ -1,255 +1,34 @@
-
-
-- name: gather info on networks
-  hosts: localhost # This is where this task will run - not where the affected machines are
-  tasks:
-   
-    - name: get the data about vpcs
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_net_info_module.html
-      amazon.aws.ec2_vpc_net_info:
-        filters:
-          "tag:Name": ARC-playpen
-      register: vpcs 
-
-    - name: get the data about subnets
-      amazon.aws.ec2_vpc_subnet_info:
-        filters:
-          vpc-id: "{{vpcs.vpcs[0].id}}"
-          "tag:Name": "playpen-public-eu-west-2a"
-      register: subnets
-
-
-
-
-- name: create host node
+- name: prepare the instances
+  vars:
+    cluster_size: 16
   hosts: localhost
   tasks:
-    - name: create a security group
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_security_group_module.html
-      amazon.aws.ec2_security_group:
-        name: cluster_security_group
-        description: course security group
-        vpc_id: "{{vpcs.vpcs[0].id}}"
-        region: eu-west-2
-        rules:
-          - proto: tcp
-            ports: 22
-            cidr_ip: 38.242.0.0/16
-            rule_desc: allow my IP on SSH
-          - proto: tcp
-            ports: 80
-            cidr_ip: 38.242.0.0/16
-            rule_desc: allow my IP on WWW
-          - proto: tcp
-            ports: 80
-            group_name: cluster_security_group
-            rule_desc: Allow each element of the cluster to access other machines in the cluster with WWW
-            # only works via PRIVATE IP
-          - proto: tcp
-            ports: 22
-            group_name: cluster_security_group
-            rule_desc: Allow each element of the cluster to access other machines in the cluster with SSH
+  - name: create the headnode instances
+    include_tasks: hc_headnode_instances.yml
+  - name: create the worker instances
+    include_tasks: hc_worker_instances.yml
 
 
-    - name: create the host node
-      # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
-      amazon.aws.ec2_instance:
-        name: "cluster-host"
-        key_name: ucgajhe_aws_dev_keypair
-        vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
-        instance_type: c4.2xlarge
-        security_group: cluster_security_group
-        network:
-          assign_public_ip: true
-        image_id: ami-0f9bfd7d2738e70d5
-        tags:
-          Owner: ucgajhe
-          Role: host
-        state: running
-
-    - name: Refresh inventory to ensure new instances exist in inventory
-      ansible.builtin.meta: refresh_inventory
-
-    - name: Gather information on host instance
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
-      amazon.aws.ec2_instance_info:
-        filters:
-          "tag:Owner": ucgajhe
-          "tag:Role": host
-          instance-state-name: running
-      register: host_info
-
-    - name: create storage volume for the data for the host instance
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
-      amazon.aws.ec2_vol:
-        instance: "{{host_info.instances[0].instance_id}}"
-        delete_on_termination: true
-        tags:
-          Owner: ucgajhe
-        volume_size: 128 #GiB
-        volume_type: gp3
-        name: datastorage-cluster # prevent recreation if it exists
-
-
-
-- name: on the host instance, get the data volume formatted and ready to use
-  hosts: tag_Role_host
+- name: get info about made instances
+  hosts: localhost
   tasks:
-    - name: create a mount point for the data volume
-      ansible.builtin.file:
-        path: data/
-        state: directory
-        mode: '0755' 
-    - name: format the volume as ext4
-      community.general.filesystem:
-        dev: /dev/xvdf
-        fstype: ext4
-      become: true
-    - name: mount the filesystem
-      ansible.posix.mount:
-        name: data
-        src: /dev/xvdf
-        fstype: ext4
-        state: mounted 
-      become: true
-    - name: change the owner back to ec2-user after mounting
-      become: true
-      ansible.builtin.file:
-        path: data/
-        state: directory
-        mode: u+rwx,a+x
-        owner: ec2-user
+    - name: get info about instances
+      include_tasks: hc_instance_info.yml
 
-- name: Prepare the host to serve the data
-  become: true
-  hosts: tag_Role_host
-  tasks:
-    - name: Install yum packages
-      ansible.builtin.yum:
-        name: "{{ packages }}"
-      vars:
-        packages:
-        - python
-        - python-pip
-        - unzip
-        - wget
-        - httpd
-    - name: Set up the web server to serve from ~/data
-      ansible.builtin.copy:
-        src: cluster_apache.conf
-        dest: /etc/httpd/conf.d/data.conf
-    - name: Allow apache to view files in ~/data
-      community.general.sefcontext:
-        target: '/home/ec2-user/data'
-        setype: httpd_sys_content_t
-        state: present
-    - name: Start service httpd
-      ansible.builtin.service:
-        name: httpd
-        state: restarted
-
-- name: on the host instance, get the data
+- name: prepare the headnode
   hosts: tag_Role_host
   vars:
     targets:
       - 1850-1859
   tasks:
-  - name: Create temp folder for incomplete downloads on larger volume
-    ansible.builtin.file:
-      path: data/tmp
-      state: directory
-      mode: '0755' 
-  - name: Fetch the individual files 
-  # Need to point out that this is a faff cf cat targets |
-  # xargs -n1 wget but worth it for stability
-  # Or GNU parallel
-    ansible.builtin.get_url:
-      url:   "https://s3.eu-west-2.amazonaws.com/nineteenth-century-books/{{ item }}.zip"
-      dest: "data/{{item}}.zip"
-      tmp_dest: data/tmp
-    loop: "{{targets}}"
-    register: monitor
-  # - name: unzip the files (top level of zipping only)
-  # #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
-  # # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
-  #   ansible.builtin.unarchive:
-  #     src: "data/{{item}}.zip"
-  #     dest: data
-  #     remote_src: yes
-  # loop: "{{targets}}"
-  - name: create the manifest file
-    ansible.builtin.shell:
-      chdir: data
-      cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'
+  - name: prepare the headnode
+    include_tasks: 
+      file: hc_headnode.yml
 
-- name: create the client instances
-  hosts: localhost
-  vars:
-    cluster_size: 16
-  tasks:
-    - name: create instances
-      amazon.aws.ec2_instance:
-        name: "cluster-client-{{item}}"
-        key_name: ucgajhe_aws_dev_keypair
-        vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
-        instance_type: t3.small
-        security_group: cluster_security_group
-        #iam_instance_profile: arn:aws:iam::206627141809:instance-profile/EC2ReadTagsRole
-        # Above is to allow the instances to query their own metadata via boto
-        network:
-          assign_public_ip: true
-        image_id: ami-0f9bfd7d2738e70d5
-        tags:
-          Owner: ucgajhe
-          Role: client
-          Rank: "{{item}}"
-          Size: "{{cluster_size}}"
-        state: running
-      loop: "{{range(cluster_size)}}"
-    - name: Refresh inventory to ensure new instances exist in inventory
-      ansible.builtin.meta: refresh_inventory
-    - name: Gather information on client instances
-    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
-      amazon.aws.ec2_instance_info:
-        filters:
-          "tag:Owner": ucgajhe
-          "tag:Role": client
-          instance-state-name: running
-      register: client_info
-
-- name: Prepare the code to run on the clients
+- name: prepare the workers
   hosts: tag_Role_client
   tasks:
-    - name: Install yum packages
-      ansible.builtin.yum:
-        name: "{{ packages }}"
-      become: true
-      vars:
-        packages:
-        - python
-        - python-pip
-        - unzip
-        - git
-        - wget
-    - name: install this package from from git
-      ansible.builtin.pip:
-        name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
-        state: forcereinstall
-    - name: get the manifest on each client
-      ansible.builtin.get_url:
-        url: "http://{{hostvars['localhost'].host_info.instances[0].private_ip_address}}/data/manifest.txt"
-        dest: /home/ec2-user/manifest.txt
-    - name: get facts about this instance, and add them to the hostvars
-      amazon.aws.ec2_metadata_facts:
-    # - name: get more facts about this instance and register them
-    # # This is much more of a faff than it should be
-    #   amazon.aws.ec2_instance_info:
-    #     region: eu-west-2
-    #     instance_ids: "{{ansible_ec2_instance_id}}"
-    #   register: facts_about_this_instance
-    - name: Tell the instance about its rank and size in the cluster
-      ansible.builtin.set_fact: 
-        rank: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Rank}}"
-        size: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Size}}"
-    - name: generate a partial manifest on each client
-      ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
+    - name: set up the worker nodes
+      include_tasks: hc_workers.yml
+    - name: fetch the data on the worker nodes
+      include_tasks: hc_data.yml 

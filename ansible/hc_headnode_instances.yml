@@ -1,0 +1,81 @@
+- name: get the data about vpcs
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_net_info_module.html
+  amazon.aws.ec2_vpc_net_info:
+    filters:
+      "tag:Name": ARC-playpen
+  register: vpcs 
+
+- name: get the data about subnets
+  amazon.aws.ec2_vpc_subnet_info:
+    filters:
+      vpc-id: "{{vpcs.vpcs[0].id}}"
+      "tag:Name": "playpen-public-eu-west-2a"
+  register: subnets
+
+
+- name: create a security group
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_security_group_module.html
+  amazon.aws.ec2_security_group:
+    name: cluster_security_group
+    description: course security group
+    vpc_id: "{{vpcs.vpcs[0].id}}"
+    region: eu-west-2
+    rules:
+      - proto: tcp
+        ports: 22
+        cidr_ip: 38.242.0.0/16
+        rule_desc: allow my IP on SSH
+      - proto: tcp
+        ports: 80
+        cidr_ip: 38.242.0.0/16
+        rule_desc: allow my IP on WWW
+      - proto: tcp
+        ports: 80
+        group_name: cluster_security_group
+        rule_desc: Allow each element of the cluster to access other machines in the cluster with WWW
+        # only works via PRIVATE IP
+      - proto: tcp
+        ports: 22
+        group_name: cluster_security_group
+        rule_desc: Allow each element of the cluster to access other machines in the cluster with SSH
+
+
+- name: create the host node
+  # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
+  amazon.aws.ec2_instance:
+    name: "cluster-host"
+    key_name: ucgajhe_aws_dev_keypair
+    vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
+    instance_type: c4.2xlarge
+    security_group: cluster_security_group
+    network:
+      assign_public_ip: true
+    image_id: ami-0f9bfd7d2738e70d5
+    tags:
+      Owner: ucgajhe
+      Role: host
+    state: running
+
+- name: Refresh inventory to ensure new instances exist in inventory
+  ansible.builtin.meta: refresh_inventory
+
+- name: Gather information on host instance
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_info_module.html
+  amazon.aws.ec2_instance_info:
+    filters:
+      "tag:Owner": ucgajhe
+      "tag:Role": host
+      instance-state-name: running
+  register: host_info
+
+- name: create storage volume for the data for the host instance
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vol_module.html
+  amazon.aws.ec2_vol:
+    instance: "{{host_info.instances[0].instance_id}}"
+    delete_on_termination: true
+    tags:
+      Owner: ucgajhe
+    volume_size: 128 #GiB
+    volume_type: gp3
+    name: datastorage-cluster # prevent recreation if it exists
+

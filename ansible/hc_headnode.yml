@@ -1,0 +1,84 @@
+- name: create a mount point for the data volume
+  ansible.builtin.file:
+    path: data/
+    state: directory
+    mode: '0755' 
+- name: format the volume as ext4
+  community.general.filesystem:
+    dev: /dev/xvdf
+    fstype: ext4
+  become: true
+- name: mount the filesystem
+  become: true
+  ansible.posix.mount:
+    name: data
+    src: /dev/xvdf
+    fstype: ext4
+    state: mounted 
+  become: true
+- name: change the owner back to ec2-user after mounting
+  become: true
+  ansible.builtin.file:
+    path: data/
+    state: directory
+    mode: u+rwx,a+x
+    owner: ec2-user
+- name: Install yum packages
+  become: true
+  ansible.builtin.yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - python
+    - python-pip
+    - unzip
+    - wget
+    - httpd
+- name: Set up the web server to serve from ~/data
+  become: true
+  ansible.builtin.copy:
+    src: cluster_apache.conf
+    dest: /etc/httpd/conf.d/data.conf
+- name: Allow apache to view files in ~/data
+  become: true
+  community.general.sefcontext:
+    target: '/home/ec2-user/data'
+    setype: httpd_sys_content_t
+    state: present
+- name: Start service httpd
+  become: true
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+- name: Create temp folder for incomplete downloads on larger volume
+  ansible.builtin.file:
+    path: data/tmp
+    state: directory
+    mode: '0755'
+- name: Create folder for clients to deposit their results
+  ansible.builtin.file:
+    path: data/tmp
+    state: directory
+    mode: '0755' 
+- name: Fetch the individual files 
+# Need to point out that this is a faff cf cat targets |
+# xargs -n1 wget but worth it for stability
+# Or GNU parallel
+  ansible.builtin.get_url:
+    url:   "https://s3.eu-west-2.amazonaws.com/nineteenth-century-books/{{ item }}.zip"
+    dest: "data/{{item}}.zip"
+    tmp_dest: data/tmp
+  loop: "{{targets}}"
+  register: monitor
+# - name: unzip the files (top level of zipping only)
+# #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
+# # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
+#   ansible.builtin.unarchive:
+#     src: "data/{{item}}.zip"
+#     dest: data
+#     remote_src: yes
+# loop: "{{targets}}"
+- name: create the manifest file
+  ansible.builtin.shell:
+    chdir: data
+    cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'

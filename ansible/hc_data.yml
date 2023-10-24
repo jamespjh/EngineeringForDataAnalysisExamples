@@ -1,0 +1,6 @@
+- name: fetch the data for this node
+  ansible.builtin.shell: |
+    cd data/local_corpus
+    cat ../../manifest_local.txt | xargs -n1 wget -N
+  async: 600
+  poll: 10
