@@ -39,6 +39,12 @@
         group_name: cluster_security_group
         rule_desc: Allow each element of the cluster to access other machines in the cluster with SSH
 
+- name: create key pair to allow nodes to ssh to each other
+  #https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_key_module.html
+  amazon.aws.ec2_key:
+    region: eu-west-2
+    name: ucgajhe_cluster_key
+    key_material: "{{ lookup('file', '/Users/jamespjh/.ssh/cluster-key.pub') }}"
 
 - name: create the host node
   # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html

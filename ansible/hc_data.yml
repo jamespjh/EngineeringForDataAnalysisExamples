@@ -2,5 +2,6 @@
   ansible.builtin.shell: |
     cd data/local_corpus
     cat ../../manifest_local.txt | xargs -n1 wget -N
+  # The -N flag to wget makes this idempotent
   async: 600
   poll: 10

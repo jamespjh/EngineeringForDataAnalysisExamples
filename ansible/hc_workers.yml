@@ -1,4 +1,10 @@
 
+- name: Set up the private key so the clients can ssh to the host
+  ansible.builtin.copy:
+    dest: /home/ec2-user/.ssh/id_rsa
+    src: "/Users/jamespjh/.ssh/cluster-key"
+    mode: '600'
+
 - name: Install yum packages
   ansible.builtin.yum:
     name: "{{ packages }}"
@@ -25,20 +31,6 @@
   async: 60 # Run in parallel on each remote node rather than sequential
   poll: 1
 
-- name: get facts about this instance, and add them to the hostvars
-  amazon.aws.ec2_metadata_facts:
-  async: 60 # Run in parallel on each remote node rather than sequential
-  poll: 1
-# - name: get more facts about this instance and register them
-# # This is much more of a faff than it should be
-#   amazon.aws.ec2_instance_info:
-#     region: eu-west-2
-#     instance_ids: "{{ansible_ec2_instance_id}}"
-#   register: facts_about_this_instance
-- name: Tell the instance about its rank and size in the cluster
-  ansible.builtin.set_fact: 
-    rank: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Rank}}"
-    size: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Size}}"
 - name: generate a partial manifest on each client
   ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
 - name: make a local corpus folder on the client to keep the local files to analyse in

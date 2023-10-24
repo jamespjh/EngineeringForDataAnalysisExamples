@@ -14,6 +14,12 @@
   tasks:
     - name: get info about instances
       include_tasks: hc_instance_info.yml
+    
+- name: get rank and size info on workers
+  hosts: tag_Role_client
+  tasks:
+    - name: get info about rank and size
+      include_tasks: hc_worker_info.yml
 
 - name: prepare the headnode
   hosts: tag_Role_host
@@ -32,3 +38,15 @@
       include_tasks: hc_workers.yml
     - name: fetch the data on the worker nodes
       include_tasks: hc_data.yml 
+
+- name: run the analysis
+  hosts: tag_Role_client
+  tasks:
+    - name: run the analysis
+      include_tasks: hc_analyse.yml
+
+- name: Combine the results on the headnode and print
+  hosts: tag_Role_host
+  tasks:
+    - name: Combine the results and print
+      include_tasks: hc_combine.yml

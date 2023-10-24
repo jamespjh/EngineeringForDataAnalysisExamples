@@ -1,0 +1,6 @@
+- name: run the analysis on the data for this node
+  ansible.builtin.shell: "analyse data/local_corpus arms --parallel > result_{{rank}}_{{size}}.json"
+  async: 3600
+  poll: 10
+- name: copy the result from this node to the master
+  ansible.builtin.shell: "scp result_*.json ec2_user@{{hostvars['localhost'].host_info.instances[0].private_ip_address}}:results"
