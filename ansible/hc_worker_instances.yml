@@ -5,6 +5,8 @@
     vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
     instance_type: c4.2xlarge
     security_group: cluster_security_group
+    iam_instance_profile: EC2ReadTagsRole # Set a Role on the instance so it is allowed to do things to the bucket
+    #iam_instance_profile: arn:aws:iam::206627141809:instance-profile/EC2ReadTagsRole
     # Above is to allow the instances to query their own metadata via boto
     network:
       assign_public_ip: true
@@ -19,7 +21,6 @@
   async: 120
   poll: 0
   register: async_data
-  
 - name: Check on instance creation tasks
   async_status:
     jid: "{{ item.ansible_job_id }}"

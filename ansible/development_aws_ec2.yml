@@ -8,7 +8,7 @@ compose:
   ansible_host: public_dns_name
   ansible_user: "'ec2-user'"
   ansible_ssh_private_key_file: "'/Users/jamespjh/.ssh/aws_rsa'"
-  ansible_ssh_common_args: "'-o StrictHostKeyChecking=no'"
+  ansible_ssh_common_args: "'-o StrictHostKeyChecking=no -o ControlMaster=auto -o ControlPersist=1200'"
 filters:
   tag:Owner:
     - ucgajhe

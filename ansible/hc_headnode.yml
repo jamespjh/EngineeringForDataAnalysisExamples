@@ -33,27 +33,13 @@
     - python-pip
     - unzip
     - wget
-    - httpd
 - name: install this package from from git
   ansible.builtin.pip:
     name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
     state: forcereinstall
-- name: Set up the web server to serve from ~/data
-  become: true
-  ansible.builtin.copy:
-    src: cluster_apache.conf
-    dest: /etc/httpd/conf.d/data.conf
-- name: Allow apache to view files in ~/data
-  become: true
-  community.general.sefcontext:
-    target: '/home/ec2-user/data'
-    setype: httpd_sys_content_t
-    state: present
-- name: Start service httpd
-  become: true
-  ansible.builtin.service:
-    name: httpd
-    state: restarted
+- name: install awscli
+  ansible.builtin.pip:
+    name: awscli
 - name: Create temp folder for incomplete downloads on larger volume
   ansible.builtin.file:
     path: data/tmp
@@ -85,8 +71,21 @@
 #     src: "data/{{item}}.zip"
 #     dest: data
 #     remote_src: yes
-# loop: "{{targets}}"
-- name: create the manifest file
-  ansible.builtin.shell:
-    chdir: data
-    cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'
+# # loop: "{{targets}}"
+- name: get the list of objects to put to S3
+  ansible.builtin.find:
+    paths: data/1850_1859/
+    recurse: no
+  register: objects
+- name: put the individual zip files to S3 with ansible task
+  amazon.aws.s3_object:
+    bucket: data-bucket-books-example
+    object: "{{item | basename}}"
+    src: "{{item}}"
+    mode: put
+    permission: [] # We're using AWS bucket policies not ACLs
+  loop: "{{objects.files | map(attribute='path')}}"
+# - name: put the individual zip files to S3
+#   # Doing it this way is not idempotent, but worth comparing fast!
+#   ansible.builtin.shell: "ls data/1850_1859 | xargs -Itarget -n1 aws s3 cp data/1850_1859/target s3://data-bucket-books-example"
+    

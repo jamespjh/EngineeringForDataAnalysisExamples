@@ -16,18 +16,22 @@
     - unzip
     - git
     - wget
-
 - name: install this package from from git
   ansible.builtin.pip:
     name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
     state: forcereinstall
-
-- name: get the manifest on each client
-  ansible.builtin.get_url:
-    url: "http://{{hostvars['localhost'].host_info.instances[0].private_ip_address}}/data/manifest.txt"
-    dest: /home/ec2-user/manifest.txt
-
-
+- name: install awscli
+  ansible.builtin.pip:
+    name: awscli
+- name: generate a variable of keys in s3 for objects to process on all nodes
+  amazon.aws.s3_object:
+    bucket: data-bucket-books-example
+    mode: list
+  register: objects
+- name: write a file containing the list of objects to process
+  ansible.builtin.template:
+    src: manifest.j2
+    dest: manifest.txt
 - name: generate a partial manifest on each client
   ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
 - name: make a local corpus folder on the client to keep the local files to analyse in

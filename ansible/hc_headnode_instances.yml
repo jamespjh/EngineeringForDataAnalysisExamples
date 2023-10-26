@@ -54,6 +54,7 @@
     vpc_subnet_id: "{{subnets.subnets[0].subnet_id}}"
     instance_type: c4.2xlarge
     security_group: cluster_security_group
+    iam_instance_profile: EC2ReadTagsRole # Set a Role on the instance so it is allowed to do things to the bucket
     network:
       assign_public_ip: true
     image_id: ami-0f9bfd7d2738e70d5
@@ -85,3 +86,27 @@
     volume_type: gp3
     name: datastorage-cluster # prevent recreation if it exists
 
+- name: create an S3 bucket for the object data
+  vars:
+    policy: # The policy for what our role on the instance is allowed to do to the bucket
+      Version: "2012-10-17"
+      Statement:
+        - Sid: ListObjectsInBucket
+          Principal: 
+            AWS: arn:aws:iam::206627141809:role/EC2ReadTagsRole
+          Effect: Allow
+          Action: 
+            - s3:ListBucket
+          Resource: 
+            - arn:aws:s3:::data-bucket-books-example
+        - Sid: AllObjectActions
+          Principal: 
+            AWS: arn:aws:iam::206627141809:role/EC2ReadTagsRole
+          Effect: Allow
+          Action: [s3:*Object, s3:GetObjectTagging]
+          Resource: 
+            - arn:aws:s3:::data-bucket-books-example/*
+  #https://docs.ansible.com/ansible/latest/collections/amazon/aws/s3_bucket_module.html
+  amazon.aws.s3_bucket:
+    name: data-bucket-books-example
+    policy: "{{policy | tojson}}"
