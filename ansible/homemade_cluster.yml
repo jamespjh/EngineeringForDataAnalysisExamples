@@ -21,15 +21,15 @@
     - name: get info about rank and size
       include_tasks: hc_worker_info.yml
 
-# - name: prepare the headnode
-#   hosts: tag_Role_host
-#   vars:
-#     targets:
-#       - 1850-1859
-#   tasks:
-#   - name: prepare the headnode
-#     include_tasks: 
-#       file: hc_headnode.yml
+- name: prepare the headnode
+  hosts: tag_Role_host
+  vars:
+    targets:
+      - 1850-1859
+  tasks:
+  - name: prepare the headnode
+    include_tasks: 
+      file: hc_headnode.yml
 
 - name: prepare the workers
   hosts: tag_Role_client

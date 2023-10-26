@@ -72,20 +72,31 @@
 #     dest: data
 #     remote_src: yes
 # # loop: "{{targets}}"
-- name: get the list of objects to put to S3
-  ansible.builtin.find:
-    paths: data/1850_1859/
-    recurse: no
-  register: objects
-- name: put the individual zip files to S3 with ansible task
-  amazon.aws.s3_object:
-    bucket: data-bucket-books-example
-    object: "{{item | basename}}"
-    src: "{{item}}"
-    mode: put
-    permission: [] # We're using AWS bucket policies not ACLs
-  loop: "{{objects.files | map(attribute='path')}}"
-# - name: put the individual zip files to S3
-#   # Doing it this way is not idempotent, but worth comparing fast!
-#   ansible.builtin.shell: "ls data/1850_1859 | xargs -Itarget -n1 aws s3 cp data/1850_1859/target s3://data-bucket-books-example"
+# - name: get the list of objects to put to S3
+#   ansible.builtin.find:
+#     paths: data/1850_1859/
+#     recurse: no
+#   register: objects
+# - name: put the individual zip files to S3 with ansible task
+#   amazon.aws.s3_object:
+#     bucket: data-bucket-books-example
+#     object: "{{item | basename}}"
+#     src: "{{item}}"
+#     mode: put
+#     permission: [] # We're using AWS bucket policies not ACLs
+#   loop: "{{objects.files | map(attribute='path')}}"
+#   async: 1200
+#   poll: 0
+#   register: async_data
+# - name: check the data copies have finished
+#   async_status:
+#     jid: "{{ item.ansible_job_id }}"
+#   register: job_result
+#   until: job_result.finished
+#   retries: 100
+#   delay: 2
+#   loop: "{{async_data.results}}"
+- name: put the individual zip files to S3
+  # Doing it this way is not idempotent, but worth comparing fast!
+  ansible.builtin.shell: "aws s3 sync data/1850_1859 s3://data-bucket-books-example"
     

@@ -16,6 +16,7 @@ def analysis_entry():
     arguments = parser.parse_args()
 
     # if the path is to a folder, then extract the names of the zip files in it, analyse each, and combine the results
+    
     if os.path.isdir(arguments.path):
         results = analyse_collection(arguments.path, arguments.target_word, arguments.parallel)
     else: 

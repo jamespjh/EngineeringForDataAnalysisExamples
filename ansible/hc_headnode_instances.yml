@@ -86,9 +86,11 @@
     volume_type: gp3
     name: datastorage-cluster # prevent recreation if it exists
 
-- name: create an S3 bucket for the object data
-  vars:
-    policy: # The policy for what our role on the instance is allowed to do to the bucket
+- name: create an S3 bucket for the object data      
+  #https://docs.ansible.com/ansible/latest/collections/amazon/aws/s3_bucket_module.html
+  amazon.aws.s3_bucket:
+    name: data-bucket-books-example
+    policy: 
       Version: "2012-10-17"
       Statement:
         - Sid: ListObjectsInBucket
@@ -106,7 +108,3 @@
           Action: [s3:*Object, s3:GetObjectTagging]
           Resource: 
             - arn:aws:s3:::data-bucket-books-example/*
-  #https://docs.ansible.com/ansible/latest/collections/amazon/aws/s3_bucket_module.html
-  amazon.aws.s3_bucket:
-    name: data-bucket-books-example
-    policy: "{{policy | tojson}}"

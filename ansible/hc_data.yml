@@ -1,5 +1,4 @@
 - name: fetch the data for this node
-  ansible.builtin.shell: |
-    cd data/local_corpus
-    cat ../../manifest_local.txt | xargs -n1 wget -N
-  # The -N flag to wget makes this idempotent
+  ansible.builtin.shell:
+    chdir: data/local_corpus
+    cmd: cat ../../manifest_local.txt | xargs -Itarget aws s3 cp s3://data-bucket-books-example/target .
