@@ -1,7 +1,5 @@
 - name: get facts about this instance, and add them to the hostvars
   amazon.aws.ec2_metadata_facts:
-  async: 60 # Run in parallel on each remote node rather than sequential
-  poll: 1
 # - name: get more facts about this instance and register them
 # # This is much more of a faff than it should be
 #   amazon.aws.ec2_instance_info:

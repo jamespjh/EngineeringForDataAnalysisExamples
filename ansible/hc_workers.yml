@@ -16,20 +16,17 @@
     - unzip
     - git
     - wget
-  async: 60 # Run in parallel on each remote node rather than sequential
-  poll: 1
+
 - name: install this package from from git
   ansible.builtin.pip:
     name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
     state: forcereinstall
-  async: 60 # Run in parallel on each remote node rather than sequential
-  poll: 5
+
 - name: get the manifest on each client
   ansible.builtin.get_url:
     url: "http://{{hostvars['localhost'].host_info.instances[0].private_ip_address}}/data/manifest.txt"
     dest: /home/ec2-user/manifest.txt
-  async: 60 # Run in parallel on each remote node rather than sequential
-  poll: 1
+
 
 - name: generate a partial manifest on each client
   ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
