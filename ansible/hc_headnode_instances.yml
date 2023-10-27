@@ -38,6 +38,21 @@
         ports: 22
         group_name: cluster_security_group
         rule_desc: Allow each element of the cluster to access other machines in the cluster with SSH
+  register: security_group
+
+- name: create a security group for EFS
+# https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_security_group_module.html
+  amazon.aws.ec2_security_group:
+    name: cluster_efs_security_group
+    description: course security group
+    vpc_id: "{{vpcs.vpcs[0].id}}"
+    region: eu-west-2
+    rules:
+      - proto: tcp
+        ports: 2049
+        group_name: cluster_security_group
+        rule_desc: Allow the cluster to reach the EFS
+  register: efs_security_group
 
 - name: create key pair to allow nodes to ssh to each other
   #https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_key_module.html
@@ -85,3 +100,18 @@
     volume_type: gp3
     name: datastorage-cluster # prevent recreation if it exists
 
+- name: create an EFS volume for the parallel storage example
+#https://docs.ansible.com/ansible/latest/collections/community/aws/efs_module.html
+  community.aws.efs:
+    state: present
+    name: cluster-efs
+    tags:
+        Owner: ucgajhe
+    targets:
+        - subnet_id: "{{subnets.subnets[0].subnet_id}}"
+          security_groups: [ "{{efs_security_group.group_id}}" ]
+  register: efs
+
+- name: debug the efs variable
+  ansible.builtin.debug:
+    var: efs

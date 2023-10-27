@@ -1,5 +1,5 @@
-- name: fetch the data for this node
+- name: copy the subset of data for this node
   ansible.builtin.shell: |
     cd data/local_corpus
-    cat ../../manifest_local.txt | xargs -n1 wget -N
-  # The -N flag to wget makes this idempotent
+    ../../manifest_local.txt | xargs -Itarget cp -u target .
+  # The -u flag to cp makes this idempotent

@@ -34,26 +34,49 @@
     - unzip
     - wget
     - httpd
+    - make
+    - rpm-build
 - name: install this package from from git
   ansible.builtin.pip:
     name: git+https://github.com/jamespjh/EngineeringForDataAnalysisExamples.git
     state: forcereinstall
-- name: Set up the web server to serve from ~/data
+- name: Create temp folder for builds
+  ansible.builtin.file:
+    path: build
+    state: directory
+- name: Git checkout the EFS utilities
+  ansible.builtin.git:
+    repo: 'https://github.com/aws/efs-utils'
+    dest: build/efs-utils
+- name: Build EFS
+  community.general.make:
+    chdir: build/efs-utils
+    target: rpm
+- name: Install yum EFS
   become: true
-  ansible.builtin.copy:
-    src: cluster_apache.conf
-    dest: /etc/httpd/conf.d/data.conf
-- name: Allow apache to view files in ~/data
-  become: true
-  community.general.sefcontext:
-    target: '/home/ec2-user/data'
-    setype: httpd_sys_content_t
+  ansible.builtin.yum:
+    name: /home/ec2-user/build/efs-utils/build/amazon-efs-utils-1.35.0-1.el9.noarch.rpm
     state: present
-- name: Start service httpd
+- name: Make a mountpoint for the EFS
+  ansible.builtin.file:
+      path: efs/
+      state: directory
+      mode: '0755' 
+- name: mount the EFS
   become: true
-  ansible.builtin.service:
-    name: httpd
-    state: restarted
+  ansible.posix.mount:
+    path: efs/
+    src: "{{hostvars['localhost'].efs.efs.mount_targets[0].file_system_id}}"
+    fstype: efs
+    state: mounted 
+  become: true
+- name: change the owner back to ec2-user after mounting
+  become: true
+  ansible.builtin.file:
+    path: efs/
+    state: directory
+    mode: u+rwx,a+x
+    owner: ec2-user
 - name: Create temp folder for incomplete downloads on larger volume
   ansible.builtin.file:
     path: data/tmp
@@ -86,7 +109,14 @@
 #     dest: data
 #     remote_src: yes
 # loop: "{{targets}}"
-- name: create the manifest file
-  ansible.builtin.shell:
-    chdir: data
-    cmd: 'ls 1850_1859 | awk ''{print "http://{{inventory_hostname}}/data/1850_1859/" $0}'' > manifest.txt'
+- name : copy the files to EFS
+  ansible.builtin.copy:
+    src: data/1850_1859
+    dest: efs
+    remote_src: yes
+    force: false
+- name: make a folder to keep results in
+  ansible.builtin.file:
+    path: efs/results
+    state: directory
+    mode: 0755 
