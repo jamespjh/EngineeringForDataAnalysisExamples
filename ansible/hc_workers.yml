@@ -1,9 +1,9 @@
 
-- name: Set up the private key so the clients can ssh to the host
-  ansible.builtin.copy:
-    dest: /home/ec2-user/.ssh/id_rsa
-    src: "/Users/jamespjh/.ssh/cluster-key"
-    mode: '600'
+# - name: Set up the private key so the clients can ssh to the host
+#   ansible.builtin.copy:
+#     dest: /home/ec2-user/.ssh/id_rsa
+#     src: "/Users/jamespjh/.ssh/cluster-key"
+#     mode: '600'
 
 - name: Install yum packages
   ansible.builtin.yum:
