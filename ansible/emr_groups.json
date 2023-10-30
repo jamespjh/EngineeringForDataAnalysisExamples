@@ -1,0 +1,14 @@
+[
+    {
+        "Name": "Master Group",
+        "InstanceGroupType": "MASTER",
+        "InstanceType": "t3.small",
+        "InstanceCount": 1
+    },
+    {
+        "Name": "Core Group",
+        "InstanceGroupType": "CORE",
+        "InstanceType": "c4.2xlarge",
+        "InstanceCount": 16
+    }
+]
