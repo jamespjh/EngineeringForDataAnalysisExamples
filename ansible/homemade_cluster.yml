@@ -1,12 +1,12 @@
-- name: prepare the instances
-  vars:
-    cluster_size: 16
-  hosts: localhost
-  tasks:
-  - name: create the headnode instances
-    include_tasks: hc_headnode_instances.yml
-  - name: create the worker instances
-    include_tasks: hc_worker_instances.yml
+# - name: prepare the instances
+#   vars:
+#     cluster_size: 16
+#   hosts: localhost
+#   tasks:
+#   - name: create the headnode instances
+#     include_tasks: hc_headnode_instances.yml
+#   - name: create the worker instances
+#     include_tasks: hc_worker_instances.yml
 
 
 - name: get info about made instances

@@ -64,10 +64,10 @@
     path: results
     state: directory
     mode: '0755' 
-- name: Set up the cluster key to allow clients to ssh to the host
-  ansible.posix.authorized_key:
-    user: ec2-user
-    key: "{{lookup('file', '/Users/jamespjh/.ssh/cluster-key.pub') }}"
+# - name: Set up the cluster key to allow clients to ssh to the host
+#   ansible.posix.authorized_key:
+#     user: ec2-user
+#     key: "{{lookup('file', '/Users/jamespjh/.ssh/cluster-key.pub') }}"
 - name: Fetch the individual files 
 # Need to point out that this is a faff cf cat targets |
 # xargs -n1 wget but worth it for stability
