@@ -66,3 +66,9 @@ def analyse_collection(source, target_word, parallel=False):
 
         result = reduce(combine_dict,map(mapper, targets),{})
     return result
+
+# We haven't made a command line entry point to this, as we will just invoke it via pyspark on the cluster
+def analyse_spark(source, spark_context, target_word):
+    zipFiles = spark_context.wholeTextFiles(source).map(lambda x: x[1]) 
+    # This makes an RDD, with all the files slurped to the appropriate thread in parallel
+    return zipFiles.map(analyse_file).reduce(combine_dict)

@@ -25,3 +25,10 @@ def test_can_analyse_collection_parallel():
     print(result)
     assert result["1851"] == 9
     assert result["1852"] == 79
+
+def test_can_analyse_spark_s2():
+    import pyspark
+    context = pyspark.sql.SparkSession.builder.master("local").appName('S3Example').getOrCreate().sparkContext
+    result = analyse_spark("s3://comp0235-ucgajhe/676204.zip",context,'arms')
+    assert result["1851"] == 9
+    assert result["1852"] == 79
