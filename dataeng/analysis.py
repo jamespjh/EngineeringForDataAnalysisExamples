@@ -40,22 +40,6 @@ def analyse_file(target_word, source):
         return {date: count}
     except AttributeError:
         return {"": 0}
-    
-
-def spark_entry():
-    parser = ArgumentParser(description="Process a collection or individual zip files via spark, and write")
-
-    parser.add_argument('path')
-    parser.add_argument('target_word')
-    parser.add_argument('dest')
-
-    arguments = parser.parse_args()
-    from pyspark.sql import SparkSession
-    spark = SparkSession.builder.appName("Calculate Red Health Violations").getOrCreate()
-    result = analyse_spark(arguments.path, spark.sparkContext, arguments.target_word)
-    df = spark.createDataFrame(data=result, schema=['year','count'])
-
-    df.write.option("header", "true").mode("overwrite").csv(dest)
 
 def combine_dict(dict1, dict2):
 
