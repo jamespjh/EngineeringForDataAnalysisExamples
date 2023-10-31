@@ -68,6 +68,12 @@ def analyse_collection(source, target_word, parallel=False):
 
 # We haven't made a command line entry point to this, as we will just invoke it via pyspark on the cluster
 def analyse_spark(source, spark_context, target_word):
-    zipFiles = spark_context.wholeTextFiles(source).map(lambda x: x[1]) 
+    from functools import partial
+    from io import BytesIO
+    zipFiles = spark_context.binaryFiles(source).map(lambda x: BytesIO(x[1]))
     # This makes an RDD, with all the files slurped to the appropriate thread in parallel
-    return zipFiles.map(analyse_file).reduce(combine_dict)
+    # The binaryFiles function returns pairs of paths and strings. Our analyse file function expects a file-like object
+    # so we wrap in BytesIO
+    # It doesn't actually run until we dispatch to spark with collect() or reduce()
+    mapper = partial(analyse_file, target_word)
+    return zipFiles.map(mapper).reduce(combine_dict)
