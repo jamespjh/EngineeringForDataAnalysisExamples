@@ -3,7 +3,6 @@ from lxml import etree
 from zipfile import ZipFile
 from json import dumps
 import os
-import requests
 from argparse import ArgumentParser
 
 def analysis_entry():
