@@ -12,5 +12,7 @@ setup(name='dataeng',
       install_requires=['bs4','ansible-core','botocore','boto3', 'mr4mp', 'lxml'],
       entry_points={'console_scripts': ['build-index = dataeng.gather:parse_index_entry',
                                         'analyse = dataeng.analysis:analysis_entry',
-                                        'combine = dataeng.combine:combine_entry']}
+                                        'combine = dataeng.combine:combine_entry',
+                                        'books_spark = dataeng.analysis:spark_entry'
+                                        ]}
      )
