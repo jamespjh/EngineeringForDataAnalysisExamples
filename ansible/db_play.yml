@@ -20,7 +20,14 @@
           - proto: tcp
             ports: 5432
             cidr_ip: 38.242.0.0/16
-            rule_desc: allow my IP on Postgres
+            rule_desc: allow home IP on Postgres
+          - proto: tcp
+            ports: 5432
+            cidr_ip: 144.82.0.0/16
+            rule_desc: allow UCL IP on Postgres
+            
+
+
       register: security_group      
 
     - name: get the data about subnets
@@ -60,9 +67,10 @@
        # https://docs.ansible.com/ansible/latest/collections/amazon/aws/rds_instance_module.html
       amazon.aws.rds_instance:
         db_cluster_identifier: molecule-cluster
-        db_instance_identifier: "cluster-replicate-{{item}}"
+        db_instance_identifier: "cluster-primary"
+        db_instance_class: db.t3.medium
         publicly_accessible: true
-        instance_type: db.m5d.large 
+        engine: aurora-postgresql
       register: database
 
     - name: Create the replicates 
@@ -70,15 +78,16 @@
       amazon.aws.rds_instance:
         db_cluster_identifier: molecule-cluster
         db_instance_identifier: "cluster-replicate-{{item}}"
+        db_instance_class: db.t3.medium
         publicly_accessible: true
-        instance_type: db.m5d.large 
+        engine: aurora-postgresql
       loop: "{{range(2)}}"
       register: replicates
 
     - name: Connect to the primary we just made, and create a DB
       community.postgresql.postgresql_db:
         name: molecules
-        login_host: "{{cluster.endpoint.address}}"
+        login_host: "{{database.endpoint.address}}"
         login_password: TeachingDataEngineeringInsecurely
         login_user: jamespjh
 
