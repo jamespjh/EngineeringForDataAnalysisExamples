@@ -9,13 +9,6 @@
           "tag:Name": ARC-playpen
       register: vpcs 
 
-    - name: get the data about subnets
-      amazon.aws.ec2_vpc_subnet_info:
-        filters:
-          vpc-id: "{{vpcs.vpcs[0].id}}"
-          "tag:Access": Public
-      register: subnets
-
     - name: create a security group
       # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_security_group_module.html
       amazon.aws.ec2_security_group:
@@ -30,44 +23,66 @@
             rule_desc: allow my IP on Postgres
       register: security_group      
 
+    - name: get the data about subnets
+      amazon.aws.ec2_vpc_subnet_info:
+        filters:
+          vpc-id: "{{vpcs.vpcs[0].id}}"
+          "tag:Access": Public
+      register: subnets
+
     - name: Add a subnet group
+      # Databases need to exist in more than one subnet, as an AWS policy.
+      # These need to be *all* public if the DB is to be publicly accessible.
       amazon.aws.rds_subnet_group:
         state: present
         name: course-db-subnet-group
         description: Course DB subnet group
         subnets: "{{subnets.subnets | map(attribute='subnet_id')}}"
 
-    - name: Create a DB instance
-      # https://docs.ansible.com/ansible/latest/collections/amazon/aws/rds_instance_module.html
-      amazon.aws.rds_instance:
-        id: exemplar-db
+    - name: Create cluster
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/rds_cluster_module.html
+      amazon.aws.rds_cluster:
+        cluster_id: "molecule-cluster"
         state: present
-        engine: postgres
-        db_instance_class: db.t3.small #There's a set of isntance types to
-                                        #use for relational databases
-        allocated_storage: 128 #GiB
-        storage_type: gp3
-        # storage_throughput: 125 #mb/s - the default for smaller storage amo
+        engine: aurora-postgresql # Note the aurora engine - AWS's replicated cluster
         backup_retention_period: 1 #days
         port: 5432 #the usual port for Postgres
         username: jamespjh
         password: TeachingDataEngineeringInsecurely
-        publicly_accessible: true
         vpc_security_group_ids: "{{security_group.group_id}}"
-        subnet_group: course-db-subnet-group
+        db_subnet_group_name: course-db-subnet-group
         tags:
           Owner: ucgajhe
           Type: exemplar
+      register: cluster
+
+    - name: Create the primary 
+       # https://docs.ansible.com/ansible/latest/collections/amazon/aws/rds_instance_module.html
+      amazon.aws.rds_instance:
+        db_cluster_identifier: molecule-cluster
+        db_instance_identifier: "cluster-replicate-{{item}}"
+        publicly_accessible: true
+        instance_type: db.m5d.large 
       register: database
 
-    - name: Connect to the instance we just made, and create a DB
+    - name: Create the replicates 
+       # https://docs.ansible.com/ansible/latest/collections/amazon/aws/rds_instance_module.html
+      amazon.aws.rds_instance:
+        db_cluster_identifier: molecule-cluster
+        db_instance_identifier: "cluster-replicate-{{item}}"
+        publicly_accessible: true
+        instance_type: db.m5d.large 
+      loop: "{{range(2)}}"
+      register: replicates
+
+    - name: Connect to the primary we just made, and create a DB
       community.postgresql.postgresql_db:
         name: molecules
-        login_host: "{{database.endpoint.address}}"
+        login_host: "{{cluster.endpoint.address}}"
         login_password: TeachingDataEngineeringInsecurely
         login_user: jamespjh
 
-    - name: Connect to the instance we just made, and create a simple table
+    - name: Connect to the primary we just made, and create a simple table
       # E.g.  engine =  psycopg2.connect(database='postgres',user='jamespjh',
       # password='TeachingDataEngineeringInsecurely',host='exemplar-db.cvvluwyhowbt.eu-west-2.rds.amazonaws.com',port=5432)
       # https://galaxy.ansible.com/ui/repo/published/community/postgresql/content/module/postgresql_table/
@@ -82,7 +97,7 @@
         - num int
         - element text
 
-    - name: Connect to the instance we just made, and run a SQL query
+    - name: Connect to the primary we just made, and run a SQL insert query
       community.postgresql.postgresql_query:
         login_host: "{{database.endpoint.address}}"
         login_password: TeachingDataEngineeringInsecurely
@@ -90,9 +105,9 @@
         db: molecules
         query: INSERT INTO molecule_elements (molecule, num, element) VALUES ('co2', 1, 'c')
 
-    - name: Connect to the instance we just made, and run a SQL query
+    - name: Connect to a replicate we just made, and run a SQL query
       community.postgresql.postgresql_query:
-        login_host: "{{database.endpoint.address}}"
+        login_host: "{{replicates.results[0].endpoint.address}}"
         login_password: TeachingDataEngineeringInsecurely
         login_user: jamespjh
         db: molecules
