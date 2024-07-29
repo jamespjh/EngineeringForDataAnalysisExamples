@@ -3,7 +3,7 @@ resource "aws_instance" "example_instance" {
   ami                         = "ami-0f9bfd7d2738e70d5"
   instance_type               = "t2.micro"
   associate_public_ip_address = true
-  key_name                    = "ucgajhe_aws_dev_keypair"
+  key_name                    = aws_key_pair.dev_keypair.key_name
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
 
