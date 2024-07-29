@@ -21,9 +21,12 @@ data "aws_vpc" "selected" {
   }
 }
 
-#https://registry.terraform.io/providers/hashicorp/aws/3.9.0/docs/data-sources/subnet_ids
-data "aws_subnet_ids" "selected" {
-  vpc_id = data.aws_vpc.selected.id
+#https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets
+data "aws_subnets" "selected" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.selected.id]
+  }
   filter {
     name   = "tag:Name"
     values = ["comp0235-subnet-public1-eu-west-2a"]
@@ -76,12 +79,29 @@ resource "aws_instance" "example_instance" {
   associate_public_ip_address = true
   key_name                    = "ucgajhe_aws_dev_keypair"
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
-  subnet_id                   = data.aws_subnet_ids.selected.id
+  subnet_id                   = data.aws_subnets.selected.ids[0]
 
   tags = {
-    Name   = "TerraformInstance"
+    Name   = "ucgajhe-tf-t2micro-instance"
     Method = "Terraform"
     Owner  = "ucgajhe"
     Type   = "exemplar"
   }
+}
+
+resource "aws_ebs_volume" "datastoraget2" {
+  availability_zone = "eu-west-2a"
+  size              = 128 #GiB
+  type              = "gp3"
+  tags = {
+    Owner  = "ucgajhe"
+    Type   = "exemplar"
+    Method = "Terraform"
+  }
+}
+
+resource "aws_volume_attachment" "t2-attach" {
+  device_name = "/dev/xvdf"
+  volume_id   = aws_ebs_volume.datastoraget2.id
+  instance_id = aws_instance.example_instance.id
 }
