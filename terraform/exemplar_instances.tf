@@ -8,7 +8,7 @@ resource "aws_instance" "example_instances" {
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
   #  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
-  user_data = templatefile("${path.module}/init_exemplar.sh", {message = "Hello World!"})
+  user_data                   = templatefile("${path.module}/init_exemplar.sh", { message = "Hello World!" })
   user_data_replace_on_change = true
 
   tags = {
