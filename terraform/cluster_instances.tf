@@ -12,6 +12,9 @@ resource "aws_instance" "headnode" {
   key_name                    = aws_key_pair.dev_keypair.key_name
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
+  #  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+  user_data                   = templatefile("${path.module}/init_cluster.sh", { rank = "Headnode", size = var.cluster_size })
+  user_data_replace_on_change = true
 
   tags = {
     Name   = "ucgajhe-cluster-headnode"
@@ -41,13 +44,16 @@ resource "aws_volume_attachment" "head-attach" {
 
 #https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "workers" {
-  for_each                    = toset(formatlist("%v",range(var.cluster_size)))
+  for_each                    = toset(formatlist("%v", range(var.cluster_size)))
   ami                         = "ami-0f9bfd7d2738e70d5"
   instance_type               = "c4.2xlarge"
   associate_public_ip_address = true
   key_name                    = aws_key_pair.dev_keypair.key_name
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
+  #  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+  user_data                   = templatefile("${path.module}/init_cluster.sh", { rank = each.key, size = var.cluster_size })
+  user_data_replace_on_change = true
 
   tags = {
     Name   = "cluster-client-${each.key}"
