@@ -56,6 +56,7 @@
         tags:
           Owner: ucgajhe
           Type: exemplar
+          Method: Ansible
         state: running
       loop:
         - t2.micro
@@ -78,6 +79,7 @@
         delete_on_termination: true
         tags:
           Owner: ucgajhe
+          Method: Ansible
         volume_size: 128 #GiB
         iops: 6000
         throughput: 750
@@ -91,6 +93,7 @@
         delete_on_termination: true
         tags:
           Owner: ucgajhe
+          Method: Ansible
         volume_size: 128 #GiB
         volume_type: gp3
         name: datastorage-t2 # prevent recreation if it exists
@@ -98,31 +101,5 @@
     - name: Refresh inventory to ensure new instances exist in inventory
       ansible.builtin.meta: refresh_inventory
 
-- name: on the device, get the data volume mounted and ready to use
-  hosts: tag_Type_exemplar
-  tasks:
-    - name: create a mount point for the data volume
-      ansible.builtin.file:
-        path: data/
-        state: directory
-        mode: '0755' 
-    - name: format the volume as ext4
-      community.general.filesystem:
-        dev: /dev/xvdf
-        fstype: ext4
-      become: true
-    - name: mount the filesystem
-      ansible.posix.mount:
-        name: data
-        src: /dev/xvdf
-        fstype: ext4
-        state: mounted 
-      become: true
-    - name: change the owner back to ec2-user after mounting
-      become: true
-      ansible.builtin.file:
-        path: data/
-        state: directory
-        mode: 0755
-        owner: ec2-user
+
 
