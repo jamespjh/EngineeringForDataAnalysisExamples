@@ -10,18 +10,18 @@ terraform {
 }
 
 provider "aws" {
-  region  = "eu-west-2"
+  region = "eu-west-2"
 }
 
 resource "aws_instance" "example_instance" {
-  ami           = "ami-0f9bfd7d2738e70d5"
-  instance_type = "t2.micro"
+  ami                         = "ami-0f9bfd7d2738e70d5"
+  instance_type               = "t2.micro"
   associate_public_ip_address = true
-  key_name = "ucgajhe_aws_dev_keypair"
+  key_name                    = "ucgajhe_aws_dev_keypair"
 
   tags = {
-    Name = "TerraformInstance"
+    Name  = "TerraformInstance"
     Owner = "ucgajhe"
-    Type = "exemplar"
+    Type  = "exemplar"
   }
 }
