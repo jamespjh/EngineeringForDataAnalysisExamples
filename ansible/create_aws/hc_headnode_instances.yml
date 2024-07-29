@@ -71,7 +71,7 @@
   amazon.aws.ec2_instance_info:
     filters:
       "tag:Owner": ucgajhe
-      "tag:Role": host
+      "tag:Type": Headnode
       instance-state-name: running
   register: host_info
 

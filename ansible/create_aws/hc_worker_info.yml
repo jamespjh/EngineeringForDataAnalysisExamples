@@ -10,3 +10,5 @@
   ansible.builtin.set_fact: 
     rank: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Rank}}"
     size: "{{( hostvars['localhost'].client_info.instances | selectattr('instance_id','equalto',ansible_ec2_instance_id) )[0].tags.Size}}"
+
+# Put a file on the instance telling it about its rank and size 

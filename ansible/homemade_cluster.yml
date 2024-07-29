@@ -1,25 +1,4 @@
-# - name: prepare the instances
-#   vars:
-#     cluster_size: 16
-#   hosts: localhost
-#   tasks:
-#   - name: create the headnode instances
-#     include_tasks: hc_headnode_instances.yml
-#   - name: create the worker instances
-#     include_tasks: hc_worker_instances.yml
 
-
-- name: get info about made instances
-  hosts: localhost
-  tasks:
-    - name: get info about instances
-      include_tasks: hc_instance_info.yml
-    
-- name: get rank and size info on workers
-  hosts: tag_Role_client
-  tasks:
-    - name: get info about rank and size
-      include_tasks: hc_worker_info.yml
 
 - name: prepare the headnode
   hosts: tag_Role_host

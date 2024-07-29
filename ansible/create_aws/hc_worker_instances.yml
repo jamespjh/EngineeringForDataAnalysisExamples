@@ -11,7 +11,7 @@
     image_id: ami-0f9bfd7d2738e70d5
     tags:
       Owner: ucgajhe
-      Role: client
+      Type: Worker
       Rank: "{{item}}"
       Size: "{{cluster_size}}"
     state: running
