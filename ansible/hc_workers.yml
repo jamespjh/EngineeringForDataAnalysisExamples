@@ -1,9 +1,9 @@
 
-# - name: Set up the private key so the clients can ssh to the host
-#   ansible.builtin.copy:
-#     dest: /home/ec2-user/.ssh/id_rsa
-#     src: "/Users/jamespjh/.ssh/cluster-key"
-#     mode: '600'
+- name: Set up the private key so the clients can ssh to the host
+  ansible.builtin.copy:
+    dest: /home/ec2-user/.ssh/id_rsa
+    src: "/Users/jamespjh/.ssh/cluster_key"
+    mode: '600'
 
 - name: Install yum packages
   ansible.builtin.yum:
@@ -24,7 +24,7 @@
 
 - name: get the manifest on each client
   ansible.builtin.get_url:
-    url: "http://{{hostvars['localhost'].host_info.instances[0].private_ip_address}}/data/manifest.txt"
+    url: "http://{{headnode_private_ip}}/data/manifest.txt"
     dest: /home/ec2-user/manifest.txt
 
 

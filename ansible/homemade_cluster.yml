@@ -1,7 +1,7 @@
 
 
 - name: prepare the headnode
-  hosts: tag_Role_host
+  hosts: tag_Type_Headnode
   vars:
     targets:
       - 1850-1859
@@ -11,21 +11,21 @@
       file: hc_headnode.yml
 
 - name: prepare the workers
-  hosts: tag_Role_client
+  hosts: tag_Type_Worker
+  vars: 
+    rank: "{{lookup('file', '/home/ec2-user/rank.txt')}}"
+    size: "{{lookup('file', '/home/ec2-user/size.txt')}}"
+    headnode_private_ip: "{{lookup('file', '/home/ec2-user/headnode_private_ip.txt')}}"
   tasks:
     - name: set up the worker nodes
       include_tasks: hc_workers.yml
     - name: fetch the data on the worker nodes
       include_tasks: hc_data.yml 
-
-- name: run the analysis
-  hosts: tag_Role_client
-  tasks:
     - name: run the analysis
       include_tasks: hc_analyse.yml
 
 - name: Combine the results on the headnode and print
-  hosts: tag_Role_host
+  hosts: tag_Type_Headnode
   tasks:
     - name: Combine the results and print
       include_tasks: hc_combine.yml

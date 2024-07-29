@@ -15,7 +15,6 @@
     src: /dev/xvdf
     fstype: ext4
     state: mounted 
-  become: true
 - name: change the owner back to ec2-user after mounting
   become: true
   ansible.builtin.file:
@@ -33,6 +32,7 @@
     - python-pip
     - unzip
     - wget
+    - git
     - httpd
 - name: install this package from from git
   ansible.builtin.pip:
@@ -64,10 +64,10 @@
     path: results
     state: directory
     mode: '0755' 
-# - name: Set up the cluster key to allow clients to ssh to the host
-#   ansible.posix.authorized_key:
-#     user: ec2-user
-#     key: "{{lookup('file', '/Users/jamespjh/.ssh/cluster-key.pub') }}"
+- name: Set up the cluster key to allow clients to ssh to the host
+  ansible.posix.authorized_key:
+    user: ec2-user
+    key: "{{lookup('file', '/Users/jamespjh/.ssh/cluster_key.pub') }}"
 - name: Fetch the individual files 
 # Need to point out that this is a faff cf cat targets |
 # xargs -n1 wget but worth it for stability
@@ -78,14 +78,14 @@
     tmp_dest: data/tmp
   loop: "{{targets}}"
   register: monitor
-# - name: unzip the files (top level of zipping only)
-# #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
-# # Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
-#   ansible.builtin.unarchive:
-#     src: "data/{{item}}.zip"
-#     dest: data
-#     remote_src: yes
-# loop: "{{targets}}"
+- name: unzip the files (top level of zipping only)
+#https://docs.ansible.com/ansible/latest/collections/ansible/builtin/unarchive_module.html
+# Why use this rather than a shell command? Save time - no need to unzip twice and ansible's task detects this
+  ansible.builtin.unarchive:
+    src: "data/{{item}}.zip"
+    dest: data
+    remote_src: yes
+  loop: "{{targets}}"
 - name: create the manifest file
   ansible.builtin.shell:
     chdir: data
