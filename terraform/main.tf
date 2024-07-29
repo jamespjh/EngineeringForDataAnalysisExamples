@@ -16,7 +16,7 @@ provider "aws" {
 #https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc
 data "aws_vpc" "selected" {
   filter {
-    name = "tag:Name"
+    name   = "tag:Name"
     values = ["comp0235-vpc"]
   }
 }
@@ -25,7 +25,7 @@ data "aws_vpc" "selected" {
 data "aws_subnet_ids" "selected" {
   vpc_id = data.aws_vpc.selected.id
   filter {
-    name = "tag:Name"
+    name   = "tag:Name"
     values = ["comp0235-subnet-public1-eu-west-2a"]
   }
 }
@@ -75,13 +75,13 @@ resource "aws_instance" "example_instance" {
   instance_type               = "t2.micro"
   associate_public_ip_address = true
   key_name                    = "ucgajhe_aws_dev_keypair"
-  vpc_security_group_ids = [aws_security_group.course_group_terraform.id]
-  subnet_id              = data.aws_subnet_ids.selected.id
+  vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
+  subnet_id                   = data.aws_subnet_ids.selected.id
 
   tags = {
-    Name  = "TerraformInstance"
+    Name   = "TerraformInstance"
     Method = "Terraform"
-    Owner = "ucgajhe"
-    Type  = "exemplar"
+    Owner  = "ucgajhe"
+    Type   = "exemplar"
   }
 }
