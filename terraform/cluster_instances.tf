@@ -13,7 +13,8 @@ resource "aws_instance" "headnode" {
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
   #  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
-  user_data                   = templatefile("${path.module}/init_cluster.sh", { rank = "Headnode", size = var.cluster_size })
+  user_data = templatefile("${path.module}/init_cluster.sh",
+  { rank = "Headnode", size = var.cluster_size, headnode_private_ip = "127.0.0.1" })
   user_data_replace_on_change = true
 
   tags = {
@@ -52,7 +53,8 @@ resource "aws_instance" "workers" {
   vpc_security_group_ids      = [aws_security_group.course_group_terraform.id]
   subnet_id                   = data.aws_subnets.selected.ids[0]
   #  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
-  user_data                   = templatefile("${path.module}/init_cluster.sh", { rank = each.key, size = var.cluster_size })
+  user_data = templatefile("${path.module}/init_cluster.sh",
+  { rank = each.key, size = var.cluster_size, headnode_private_ip = aws_instance.headnode.private_ip })
   user_data_replace_on_change = true
 
   tags = {
