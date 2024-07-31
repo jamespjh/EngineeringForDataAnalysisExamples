@@ -27,7 +27,6 @@
     url: "http://{{headnode_private_ip}}/data/manifest.txt"
     dest: /home/ec2-user/manifest.txt
 
-
 - name: generate a partial manifest on each client
   ansible.builtin.shell: "awk '!((NR+{{rank}}) %{{size}})' manifest.txt > manifest_local.txt"
 - name: make a local corpus folder on the client to keep the local files to analyse in

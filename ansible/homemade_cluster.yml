@@ -13,9 +13,9 @@
 - name: prepare the workers
   hosts: tag_Type_Worker
   vars: 
-    rank: "{{lookup('file', '/home/ec2-user/rank.txt')}}"
-    size: "{{lookup('file', '/home/ec2-user/size.txt')}}"
-    headnode_private_ip: "{{lookup('file', '/home/ec2-user/headnode_private_ip.txt')}}"
+    rank: "{{ansible_local['custom']['cluster']['rank']}}"
+    size:  "{{ansible_local['custom']['cluster']['size']}}"
+    headnode_private_ip: "{{ansible_local['custom']['cluster']['headnode_private_ip']}}"
   tasks:
     - name: set up the worker nodes
       include_tasks: hc_workers.yml

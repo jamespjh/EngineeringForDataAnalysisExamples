@@ -6,7 +6,7 @@ variable "cluster_size" {
 }
 
 resource "aws_instance" "headnode" {
-  ami                         = "ami-0f9bfd7d2738e70d5"
+  ami                         = "ami-0f0331fe42823e748"
   instance_type               = "c4.2xlarge"
   associate_public_ip_address = true
   key_name                    = aws_key_pair.dev_keypair.key_name

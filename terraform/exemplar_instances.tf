@@ -1,7 +1,7 @@
 #https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "example_instances" {
   for_each                    = toset(["t2.micro", "c4.2xlarge"])
-  ami                         = "ami-0f9bfd7d2738e70d5"
+  ami                         = "ami-0f0331fe42823e748"
   instance_type               = each.key
   associate_public_ip_address = true
   key_name                    = aws_key_pair.dev_keypair.key_name

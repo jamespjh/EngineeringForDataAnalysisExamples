@@ -1,4 +1,8 @@
 #!/bin/bash
-echo "${rank}" > /home/ec2-user/rank.txt
-echo "${size}" > /home/ec2-user/size.txt
-echo "${headnode_private_ip}" > /home/ec2-user/headnode_private_ip.txt
+mkdir -p /etc/ansible/facts.d
+echo """
+[cluster]
+rank=${rank}
+size=${size}
+headnode_private_ip=${headnode_private_ip}
+""" > /etc/ansible/facts.d/custom.fact

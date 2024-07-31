@@ -49,6 +49,14 @@
     target: '/home/ec2-user/data'
     setype: httpd_sys_content_t
     state: present
+- name: Allow apache user to read ec2-user homedir
+  become: true
+  ansible.builtin.file:
+    path: /home/ec2-user/
+    state: directory
+    mode: '0755' 
+- name: Apply new SELinux file context to folder
+  ansible.builtin.command: restorecon -irv /home/ec2-user/data
 - name: Start service httpd
   become: true
   ansible.builtin.service:
